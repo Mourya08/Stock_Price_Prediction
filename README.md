@@ -17,7 +17,7 @@ This project focuses on predicting stock prices using a hybrid model that combin
 
 ## 🛠 Technologies Used
 
-- Python (NumPy, Pandas, Matplotlib, Scikit-learn, TensorFlow/Keras)
+- Python (NumPy, Pandas, Matplotlib, Scikit-learn, TensorFlow)
 - Flask (for backend API)
 - HTML, CSS, JavaScript (for frontend UI)
 - Jupyter Notebook (for model development & experimentation)
