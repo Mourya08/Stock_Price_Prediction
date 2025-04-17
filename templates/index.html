@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Predictor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-white flex flex-col items-center p-8">
+    <h1 class="text-3xl font-bold mb-4">Stock Price Predictor</h1>
+    
+    <form id="stockForm" class="bg-gray-900 shadow-md p-6 rounded-lg w-full max-w-lg">
+        <label class="block mb-2">Stock Tickers (comma-separated):</label>
+        <input type="text" id="ticker" class="w-full p-2 border border-gray-700 rounded mb-4 bg-gray-800 text-white" required>
+        
+        <label class="block mb-2">Start Date:</label>
+        <input type="date" id="start_date" class="w-full p-2 border border-gray-700 rounded mb-4 bg-gray-800 text-white" required>
+        
+        <label class="block mb-2">End Date:</label>
+        <input type="date" id="end_date" class="w-full p-2 border border-gray-700 rounded mb-4 bg-gray-800 text-white" required>
+        
+        <label class="block mb-2">Days to Predict:</label>
+        <input type="number" id="future_days" class="w-full p-2 border border-gray-700 rounded mb-4 bg-gray-800 text-white" required>
+        
+        <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded">Predict</button>
+    </form>
+    <div id="predictionResults" class="mt-8 bg-gray-900 shadow-md p-6 rounded-lg w-full max-w-lg hidden">
+        <h2 class="text-xl font-semibold mb-4">Predicted Prices</h2>
+        <div id="stockPrices" class="text-gray-300"></div>
+    </div>
+    <canvas id="stockChart" class="mt-8 bg-gray-900 p-4 rounded-lg"></canvas>
+    
+    
+    <script>
+        document.getElementById("stockForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const ticker = document.getElementById("ticker").value;
+            const start_date = document.getElementById("start_date").value;
+            const end_date = document.getElementById("end_date").value;
+            const future_days = document.getElementById("future_days").value;
+            
+            const response = await fetch("/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ticker, start_date, end_date, future_days })
+            });
+            
+            const data = await response.json();
+            displayResults(data);
+            displayChart(data);
+        });
+        
+        function displayResults(stockData) {
+            const resultsDiv = document.getElementById("predictionResults");
+            const stockPricesDiv = document.getElementById("stockPrices");
+            stockPricesDiv.innerHTML = "";
+            
+            Object.keys(stockData).forEach(ticker => {
+                const title = document.createElement("h3");
+                title.classList.add("text-lg", "font-medium", "mt-4", "text-white");
+                title.textContent = `🔹 ${ticker}`;
+                stockPricesDiv.appendChild(title);
+                
+                stockData[ticker].dates.forEach((date, index) => {
+                    const priceEntry = document.createElement("p");
+                    priceEntry.textContent = `${date}: ${stockData[ticker].prices[index].toFixed(2)}`;
+                    stockPricesDiv.appendChild(priceEntry);
+                });
+            });
+            
+            resultsDiv.classList.remove("hidden");
+        }
+        
+        function displayChart(stockData) {
+            const ctx = document.getElementById("stockChart").getContext("2d");
+            if (window.stockChartInstance) window.stockChartInstance.destroy();
+            
+            const datasets = Object.keys(stockData).map((ticker, index) => ({
+                label: ticker,
+                data: stockData[ticker].prices,
+                borderColor: `hsl(${index * 50}, 70%, 50%)`,
+                fill: false
+            }));
+            
+            window.stockChartInstance = new Chart(ctx, {
+                type: "line",
+                data: { labels: stockData[Object.keys(stockData)[0]].dates, datasets },
+                options: { responsive: true, scales: { x: { title: { display: true, text: "Date" } }, y: { title: { display: true, text: "Price" } } } }
+            });
+        }
+    </script>
+</body>
+</html>
